@@ -19,11 +19,12 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import org.springframework.data.mapping.PropertyPath;
+import org.springframework.expression.EvaluationContext;
 
 /**
  * Operation to add a new value to the given "path". Will throw a {@link PatchException} if the path is invalid or if
  * the given value is not assignable to the given path.
- * 
+ *
  * @author Craig Walls
  * @author Oliver Gierke
  */
@@ -31,7 +32,7 @@ class AddOperation extends PatchOperation {
 
 	/**
 	 * Constructs the add operation
-	 * 
+	 *
 	 * @param path The path where the value will be added. (e.g., '/foo/bar/4')
 	 * @param value The value to add.
 	 */
@@ -48,15 +49,26 @@ class AddOperation extends PatchOperation {
 		addValue(targetObject, evaluateValueFromTarget(targetObject, type));
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.rest.webmvc.json.patch.PatchOperation#evaluateValueFromTarget(java.lang.Object, java.lang.Class)
 	 */
 	@Override
 	protected <T> Object evaluateValueFromTarget(Object targetObject, Class<T> entityType) {
+		return evaluateValueFromTarget(targetObject, entityType, null);
+	}
+
+	@Override
+	protected <T> Object evaluateValueFromTarget(Object targetObject, Class<T> entityType, EvaluationContext context) {
 
 		if (!path.endsWith("-")) {
+			if(context == null){
 			return super.evaluateValueFromTarget(targetObject, entityType);
+			}
+			else
+			{
+				return super.evaluateValueFromTarget(targetObject, entityType, context);
+			}
 		}
 
 		String pathSource = Arrays.stream(path.split("/"))//
@@ -69,5 +81,12 @@ class AddOperation extends PatchOperation {
 
 		return value instanceof LateObjectEvaluator ? ((LateObjectEvaluator) value).evaluate(propertyPath.getType())
 				: value;
+	}
+
+
+	@Override
+	<T> void perform(Object target, Class<T> type, EvaluationContext context)
+	{
+		addValue(target, evaluateValueFromTarget(target, type), context);
 	}
 }

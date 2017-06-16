@@ -15,7 +15,9 @@
  */
 package org.springframework.data.rest.webmvc.json.patch;
 
-import static org.springframework.data.rest.webmvc.json.patch.PathToSpEL.*;
+import static org.springframework.data.rest.webmvc.json.patch.PathToSpEL.pathToExpression;
+
+import org.springframework.expression.EvaluationContext;
 
 /**
  * <p>
@@ -35,7 +37,7 @@ import static org.springframework.data.rest.webmvc.json.patch.PathToSpEL.*;
  * In light of this, it's probably a good idea to perform a "replace" after a "copy" to set the ID property (which may
  * or may not be "id").
  * </p>
- * 
+ *
  * @author Craig Walls
  * @author Oliver Gierke
  */
@@ -43,7 +45,7 @@ class CopyOperation extends FromOperation {
 
 	/**
 	 * Constructs the copy operation
-	 * 
+	 *
 	 * @param path The path to copy the source value to. (e.g., '/foo/bar/4')
 	 * @param from The source path from which a value will be copied. (e.g., '/foo/bar/5')
 	 */
@@ -58,5 +60,11 @@ class CopyOperation extends FromOperation {
 	@Override
 	<T> void perform(Object target, Class<T> type) {
 		addValue(target, pathToExpression(getFrom()).getValue(target));
+	}
+
+	@Override
+	<T> void perform(Object target, Class<T> type, EvaluationContext context)
+	{
+		addValue(target, pathToExpression(getFrom()).getValue(target), context);
 	}
 }

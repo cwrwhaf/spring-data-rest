@@ -15,16 +15,18 @@
  */
 package org.springframework.data.rest.webmvc.json.patch;
 
+import org.springframework.expression.EvaluationContext;
+
 /**
  * Operation that replaces the value at the given path with a new value.
- * 
+ *
  * @author Craig Walls
  */
 public class ReplaceOperation extends PatchOperation {
 
 	/**
 	 * Constructs the replace operation
-	 * 
+	 *
 	 * @param path The path whose value is to be replaced. (e.g., '/foo/bar/4')
 	 * @param value The value that will replace the current path value.
 	 */
@@ -40,4 +42,11 @@ public class ReplaceOperation extends PatchOperation {
 	<T> void perform(Object target, Class<T> type) {
 		setValueOnTarget(target, evaluateValueFromTarget(target, type));
 	}
+
+	@Override
+	<T> void perform(Object target, Class<T> type, EvaluationContext context)
+	{
+		setValueOnTarget(target, evaluateValueFromTarget(target, type, context), context);
+	}
+
 }

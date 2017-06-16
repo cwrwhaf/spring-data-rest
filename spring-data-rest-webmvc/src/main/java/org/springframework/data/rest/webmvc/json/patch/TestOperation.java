@@ -18,6 +18,7 @@ package org.springframework.data.rest.webmvc.json.patch;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+import org.springframework.expression.EvaluationContext;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -28,14 +29,14 @@ import org.springframework.util.ObjectUtils;
  * If the value given matches the value given at the path, the operation completes as a no-op. On the other hand, if the
  * values do not match or if there are any errors interpreting the path, a {@link PatchException} will be thrown.
  * </p>
- * 
+ *
  * @author Craig Walls
  */
 class TestOperation extends PatchOperation {
 
 	/**
 	 * Constructs the test operation
-	 * 
+	 *
 	 * @param path The path to test. (e.g., '/foo/bar/4')
 	 * @param value The value to test the path against.
 	 */
@@ -67,5 +68,11 @@ class TestOperation extends PatchOperation {
 		}
 
 		return expected;
+	}
+
+	@Override
+	<T> void perform(Object target, Class<T> type, EvaluationContext context)
+	{
+		perform(target, type);
 	}
 }

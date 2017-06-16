@@ -15,6 +15,8 @@
  */
 package org.springframework.data.rest.webmvc.json.patch;
 
+import org.springframework.expression.EvaluationContext;
+
 /**
  * <p>
  * Operation that moves a value from the given "from" path to the given "path". Will throw a {@link PatchException} if
@@ -26,7 +28,7 @@ package org.springframework.data.rest.webmvc.json.patch;
  * on the values of each item in the list. When the same list resource is retrieved again later, the order will again be
  * decided by the query, effectively undoing any previous move operation.
  * </p>
- * 
+ *
  * @author Craig Walls
  * @author Oliver Gierke
  */
@@ -34,7 +36,7 @@ class MoveOperation extends FromOperation {
 
 	/**
 	 * Constructs the move operation.
-	 * 
+	 *
 	 * @param path The path to move the source value to. (e.g., '/foo/bar/4')
 	 * @param from The source path from which a value will be moved. (e.g., '/foo/bar/5')
 	 */
@@ -49,5 +51,11 @@ class MoveOperation extends FromOperation {
 	@Override
 	<T> void perform(Object target, Class<T> type) {
 		addValue(target, popValueAtPath(target, getFrom()));
+	}
+
+	@Override
+	<T> void perform(Object target, Class<T> type, EvaluationContext context)
+	{
+		addValue(target, popValueAtPath(target, getFrom()), context);
 	}
 }

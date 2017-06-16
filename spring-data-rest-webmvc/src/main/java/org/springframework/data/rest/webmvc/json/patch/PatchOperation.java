@@ -15,19 +15,22 @@
  */
 package org.springframework.data.rest.webmvc.json.patch;
 
-import static org.springframework.data.rest.webmvc.json.patch.PathToSpEL.*;
+import static org.springframework.data.rest.webmvc.json.patch.PathToSpEL.APPEND_CHARACTERS;
+import static org.springframework.data.rest.webmvc.json.patch.PathToSpEL.pathToExpression;
+import static org.springframework.data.rest.webmvc.json.patch.PathToSpEL.pathToParentExpression;
 
 import java.util.Collection;
 import java.util.List;
 
 import org.springframework.core.CollectionFactory;
 import org.springframework.core.convert.TypeDescriptor;
+import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionException;
 
 /**
  * Abstract base class representing and providing support methods for patch operations.
- * 
+ *
  * @author Craig Walls
  * @author Mathias Düsterhöft
  * @author Oliver Gierke
@@ -39,9 +42,10 @@ public abstract class PatchOperation {
 	protected final Object value;
 	protected final Expression spelExpression;
 
+
 	/**
 	 * Constructs the operation.
-	 * 
+	 *
 	 * @param op the operation name. (e.g., 'move')
 	 * @param path the path to perform the operation on. (e.g., '/1/description')
 	 */
@@ -51,7 +55,7 @@ public abstract class PatchOperation {
 
 	/**
 	 * Constructs the operation.
-	 * 
+	 *
 	 * @param op the operation name. (e.g., 'move')
 	 * @param path the path to perform the operation on. (e.g., '/1/description')
 	 * @param value the value to apply in the operation. Could be an actual value or an implementation of
@@ -88,7 +92,7 @@ public abstract class PatchOperation {
 
 	/**
 	 * Pops a value from the given path.
-	 * 
+	 *
 	 * @param target the target from which to pop a value.
 	 * @param removePath the path from which to pop a value. Must be a list.
 	 * @return the value popped from the list
@@ -120,12 +124,20 @@ public abstract class PatchOperation {
 	/**
 	 * Adds a value to the operation's path. If the path references a list index, the value is added to the list at the
 	 * given index. If the path references an object property, the property is set to the value.
-	 * 
+	 *
 	 * @param target The target object.
 	 * @param value The value to add.
 	 */
 	@SuppressWarnings({ "unchecked", "null" })
 	protected void addValue(Object target, Object value) {
+
+		addValue(target, value, null);
+	}
+
+	@SuppressWarnings(
+	{ "unchecked", "null" })
+	protected void addValue(Object target, Object value, EvaluationContext context)
+	{
 
 		Expression parentExpression = pathToParentExpression(path);
 		Object parent = parentExpression != null ? parentExpression.getValue(target) : null;
@@ -144,7 +156,15 @@ public abstract class PatchOperation {
 				parentExpression.setValue(target, collection);
 
 			} else {
-				spelExpression.setValue(target, value);
+				if (context == null)
+				{
+					spelExpression.setValue(target, value);
+				}
+				else
+				{
+					spelExpression.setValue(context, target, value);
+				}
+
 			}
 
 		} else {
@@ -154,9 +174,10 @@ public abstract class PatchOperation {
 		}
 	}
 
+
 	/**
 	 * Sets a value to the operation's path.
-	 * 
+	 *
 	 * @param target The target object.
 	 * @param value The value to set.
 	 */
@@ -164,9 +185,14 @@ public abstract class PatchOperation {
 		spelExpression.setValue(target, value);
 	}
 
+	protected void setValueOnTarget(Object target, Object evaluateValueFromTarget, EvaluationContext context)
+	{
+		spelExpression.setValue(context, target, value);
+	}
+
 	/**
 	 * Retrieves a value from the operation's path.
-	 * 
+	 *
 	 * @param target the target object.
 	 * @return the value at the path on the given target object.
 	 */
@@ -181,25 +207,35 @@ public abstract class PatchOperation {
 
 	/**
 	 * Performs late-value evaluation on the operation value if the value is a {@link LateObjectEvaluator}.
-	 * 
+	 *
 	 * @param targetObject the target object, used as assistance in determining the evaluated object's type.
 	 * @param entityType the entityType
 	 * @param <T> the entity type
 	 * @return the result of late-value evaluation if the value is a {@link LateObjectEvaluator}; the value itself
 	 *         otherwise.
 	 */
-	protected <T> Object evaluateValueFromTarget(Object targetObject, Class<T> entityType) {
+	protected <T> Object evaluateValueFromTarget(Object targetObject, Class<T> entityType)
+	{
 
 		return value instanceof LateObjectEvaluator
 				? ((LateObjectEvaluator) value).evaluate(spelExpression.getValueType(targetObject)) : value;
 	}
 
+	protected <T> Object evaluateValueFromTarget(Object targetObject, Class<T> entityType, EvaluationContext context)
+	{
+
+		return value instanceof LateObjectEvaluator
+				? ((LateObjectEvaluator) value).evaluate(spelExpression.getValueType(context, targetObject)) : value;
+	}
+
 	/**
 	 * Perform the operation.
-	 * 
+	 *
 	 * @param target the target of the operation.
 	 */
 	abstract <T> void perform(Object target, Class<T> type);
+
+	abstract <T> void perform(Object target, Class<T> type, EvaluationContext context);
 
 	private Integer targetListIndex(String path) {
 
